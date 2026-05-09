@@ -1,0 +1,48 @@
+.gh-pinned-repos-container {
+
+}
+
+#gh-pinned-sidebar {
+  font-family: "Mona Sans VF", "Segoe UI", "Noto Sans";
+  margin-bottom: 1em;
+  padding: 24px 24px 0px 24px ;
+}
+.gh-pinned-sidebar-title {
+  font-weight: bold;
+  margin-bottom: 0.5em;
+}
+.gh-pinned-sidebar-list {
+  list-style: none;
+  margin-top: 10px;
+  padding-left: 0;
+  margin-bottom: 0.5em;
+}
+#gh-pin-add {
+    padding-left: 12px;
+    padding-right: 12px;
+    padding-bottom: 12px;
+    background-color: var(--button-default-bgColor-rest, var(--color-btn-bg));
+    border: none;
+    border-radius: .375rem;
+}
+.gh-pinned-sidebar-unpin {
+  font-size: 15px;
+  color: red;
+  background-color: var(--bgColor-default);
+  border: none;
+}
+.gh-pinned-sidebar-select-container {
+    display: flex;
+    height: 24px;
+    gap: 20px;
+
+}
+
+#gh-pin-repo-select {
+    color: var(--fgColor-default, var(--color-fg-default));
+    background-color: var(--bgColor-default);
+    border: 1px solid var(--control-borderColor-rest, var(--color-border-default));
+    border-radius: 6px;
+    width: 100%;
+
+}

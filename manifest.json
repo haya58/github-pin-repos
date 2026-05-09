@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "Github Pin Repos",
+  "version": "1.0",
+  "description": "GitHubトップページでリポジトリをピン留めできるようにする拡張機能",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://api.github.com/*",
+    "https://github.com/"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://github.com/"],
+      "js": ["content.js"],
+      "css": ["content.css"]
+    }
+  ],
+  "options_page": "options.html"
+}
