@@ -1,17 +1,33 @@
-async function loadPAT() {
+const DEFAULT_DOMAIN = 'github.com';
+
+function isGitHubPage() {
+  return !!document.querySelector('meta[name="github-"]') ||
+         !!document.querySelector('meta[property="og:site_name"][content="GitHub"]') ||
+         window.location.hostname === DEFAULT_DOMAIN ||
+         !!document.querySelector('[data-octo-dimensions]');
+}
+
+function getApiBaseUrl(hostname) {
+  if (hostname === DEFAULT_DOMAIN) {
+    return 'https://api.github.com';
+  }
+  return `https://${hostname}/api/v3`;
+}
+
+async function loadConfig(hostname) {
   return new Promise((resolve) => {
-    chrome.storage.local.get('gh_pat', (result) => {
-      resolve(result.gh_pat || null);
+    chrome.storage.local.get('domains', (result) => {
+      const domains = result.domains || {};
+      resolve(domains[hostname] || { token: '' });
     });
   });
 }
 
-async function fetchMyRepos(token) {
-  // per_page最大100, ページネーション必要なら繰り返し取得
+async function fetchMyRepos(token, apiBaseUrl) {
   let repos = [];
   let page = 1, perPage = 100;
   while (true) {
-    const res = await fetch(`https://api.github.com/user/repos?per_page=${perPage}&page=${page}&sort=updated`, {
+    const res = await fetch(`${apiBaseUrl}/user/repos?per_page=${perPage}&page=${page}&sort=updated`, {
       headers: {
         'Authorization': 'Bearer ' + token,
         'Accept': 'application/vnd.github+json'
@@ -26,26 +42,27 @@ async function fetchMyRepos(token) {
     if (data.length < perPage) break;
     page++;
   }
-  // name, full_name, html_url, private など
   return repos.map(r => ({ label: r.full_name, url: r.html_url }));
 }
 
-function getPinnedRepos() {
+function getPinnedReposKey(hostname) {
+  return `gh-pinned-repos-${hostname}`;
+}
+
+function getPinnedRepos(hostname) {
   try {
-    const json = localStorage.getItem('gh-pinned-repos');
+    const json = localStorage.getItem(getPinnedReposKey(hostname));
     return json ? JSON.parse(json) : [];
   } catch {
     return [];
   }
 }
 
-function savePinnedRepos(repoList) {
-  localStorage.setItem('gh-pinned-repos', JSON.stringify(repoList));
+function savePinnedRepos(hostname, repoList) {
+  localStorage.setItem(getPinnedReposKey(hostname), JSON.stringify(repoList));
 }
 
-
-// UI描画
-function renderPinnedSection(repos, allRepos) {
+function renderPinnedSection(hostname, repos, allRepos) {
   let sidebar = document.querySelector('.dashboard-sidebar');
   if (!sidebar) return;
   let exist = document.getElementById('gh-pinned-sidebar');
@@ -69,7 +86,6 @@ function renderPinnedSection(repos, allRepos) {
       ${repos.map(repo => `<li><a href="${repo.url}" target="_blank">${repo.label}</a>
         <button data-unpin="${repo.label}" class="gh-pinned-sidebar-unpin">×</button></li>`).join('')}
     </ul>
-
   `;
   sidebar.prepend(box);
 
@@ -79,8 +95,8 @@ function renderPinnedSection(repos, allRepos) {
       const repo = allRepos.find(r => r.label === val);
       if (!repos.some(p=>p.label===repo.label)) {
         let newRepos = [...repos, repo];
-        savePinnedRepos(newRepos);
-        renderPinnedSection(newRepos, allRepos);
+        savePinnedRepos(hostname, newRepos);
+        renderPinnedSection(hostname, newRepos, allRepos);
       }
     }
   };
@@ -89,45 +105,38 @@ function renderPinnedSection(repos, allRepos) {
     btn.onclick = () => {
       const label = btn.getAttribute('data-unpin');
       const newRepos = repos.filter(r => r.label !== label);
-      savePinnedRepos(newRepos);
-      renderPinnedSection(newRepos, allRepos);
+      savePinnedRepos(hostname, newRepos);
+      renderPinnedSection(hostname, newRepos, allRepos);
     };
   });
 }
 
-// メイン
 (async function () {
-  console.log("Extension load")
+  if (!isGitHubPage()) return;
 
-  // ページを一度に複数回初期化しないようにする
+  console.log("Extension loaded on:", window.location.hostname);
+
   if (document.getElementById('gh-pinned-sidebar')) return;
 
-  const pat = await loadPAT();
-  if (!pat) {
-    // 設定誘導
-    renderPinnedSection([], []);
-    let sidebar = document.querySelector('.Layout-sidebar, [data-testid="sidebar"]');
-    if (sidebar) {
-      sidebar.prepend(document.createTextNode("アクセストークンが未設定です。設定画面から入力してください。"));
-    }
+  const hostname = window.location.hostname;
+  const config = await loadConfig(hostname);
+
+  if (!config.token) {
+    renderPinnedSection(hostname, [], []);
     return;
   }
 
+  const apiBaseUrl = getApiBaseUrl(hostname);
   let allRepos;
   try {
-    allRepos = await fetchMyRepos(pat);
-  } catch (e) {
-    renderPinnedSection([], []);
-    let sidebar = document.querySelector('.Layout-sidebar, [data-testid="sidebar"]');
-    if (sidebar) {
-      sidebar.prepend(document.createTextNode("リポジトリ取得に失敗しました。アクセストークンや権限を確認してください。"));
-    }
+    allRepos = await fetchMyRepos(config.token, apiBaseUrl);
+  } catch {
     return;
   }
 
-  const pinned = getPinnedRepos()
+  const pinned = getPinnedRepos(hostname)
     .map(label => allRepos.find(r => r.label === (typeof label === "string" ? label : label.label)))
     .filter(Boolean);
 
-  renderPinnedSection(pinned, allRepos);
+  renderPinnedSection(hostname, pinned, allRepos);
 })();

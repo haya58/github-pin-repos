@@ -4,13 +4,10 @@
   "version": "1.0",
   "description": "GitHubトップページでリポジトリをピン留めできるようにする拡張機能",
   "permissions": ["storage"],
-  "host_permissions": [
-    "https://api.github.com/*",
-    "https://github.com/"
-  ],
+  "host_permissions": ["*://*/*"],
   "content_scripts": [
     {
-      "matches": ["https://github.com/"],
+      "matches": ["*://*/*"],
       "js": ["content.js"],
       "css": ["content.css"]
     }
