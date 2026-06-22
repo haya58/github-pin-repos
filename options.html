@@ -3,16 +3,40 @@
 <head>
   <meta charset="UTF-8">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css">
+  <link rel="stylesheet" href="options.css">
   <title>Github Pin Repos 設定画面</title>
 </head>
 <body>
-  <h2>アクセストークン設定</h2>
+  <h2>ドメイン設定</h2>
   <p>
-    "Metadata" のパーミッション(Read)を指定した fine-grained token を入力してください。
+    GitHub Enterpriseなどのドメインを追加できます。各ドメインごとにアクセストークンを設定してください。
   </p>
-  <input type="password" id="pat" style="width: 350px;">
-  <button id="save">保存</button>
-  <span id="result"></span>
+  <p>
+    トークンには "Metadata" のパーミッション(Read)を指定した fine-grained token を使用してください。
+  </p>
+
+  <div id="domain-list"></div>
+
+  <button id="btn-add-domain" class="btn-add">+ ドメインを追加</button>
+
+  <div id="add-form" class="add-form">
+    <h3>新しいドメインを追加</h3>
+    <div class="add-form-row">
+      <label>
+        ドメイン名:
+        <input type="text" id="new-domain" placeholder="ex: github-enterprise.exmaple.com">
+      </label>
+    </div>
+    <div class="add-form-row">
+      <label>
+        アクセストークン:
+        <input type="password" id="new-token">
+      </label>
+    </div>
+    <button id="btn-save-new">保存</button>
+    <button id="btn-cancel">キャンセル</button>
+  </div>
+
   <script src="options.js"></script>
 </body>
 </html>
